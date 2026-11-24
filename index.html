@@ -1,3 +1,671 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Amigo Secreto • Natal 2026</title><style>
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#225b45,#09291f 75%);color:#fff;font:16px system-ui,sans-serif;min-height:100vh;padding:24px 14px}main{max-width:590px;margin:auto}header{text-align:center;padding:22px 0}small,.muted{color:#c6d9cc}h1{font-family:Georgia,serif;font-size:clamp(34px,8vw,54px);margin:12px 0;color:#f5d89a}h2{font-size:22px;margin:0 0 12px}.panel{background:#ffffff0b;border:1px solid #d8bd7650;border-radius:22px;padding:24px;box-shadow:0 15px 40px #0003;margin:12px 0}p{line-height:1.55}button,a.btn{display:inline-block;border:0;border-radius:12px;padding:14px 18px;font:600 15px system-ui;cursor:pointer;text-decoration:none;background:#e9c77c;color:#18362a;text-align:center}button:hover,a.btn:hover{filter:brightness(1.1)}button:disabled{opacity:.5;cursor:default}.wide{width:100%}.secondary{background:#ffffff12;color:white;border:1px solid #ffffff35}.names{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:18px 0}.name{padding:10px;background:#ffffff0b;border-radius:8px;font-size:14px}.line{display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:1px solid #ffffff19;flex-wrap:wrap}.line strong{flex:1;min-width:100px}.line button,.line a{padding:9px 12px;font-size:13px}.gift{font-size:100px;text-align:center;filter:drop-shadow(0 12px 12px #0005);margin:10px 0 24px}.center{text-align:center}.result{font-size:clamp(25px,7vw,44px);color:#f5d89a;font-weight:800;overflow-wrap:anywhere}.hidden{display:none!important}input{width:100%;padding:13px;border-radius:10px;border:1px solid #ffffff50;background:#ffffff12;color:white;font:inherit}footer{text-align:center;font-size:12px;color:#b8c9bb;margin:24px}.danger{color:#ffd0c9}.pop{animation:pop .6s ease both}@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.07)}100%{transform:scale(1);opacity:1}}.notice{font-size:13px;line-height:1.5;color:#d4e4d7}label{display:block;margin-bottom:8px}.actions{display:flex;gap:8px;flex-wrap:wrap}#toast{min-height:24px;color:#f5d89a;font-size:14px}</style></head><body><main><header><small>✦ NATAL 2026 ✦</small><h1>Amigo Secreto</h1><div class="muted">Oito amigas, uma surpresa especial.</div><p style="color:#f5d89a;font-weight:600">🎁 Valor mínimo do presente: R$ 50,00</p></header><section id="admin" class="panel hidden"><h2>Área do organizador</h2><p>Você organiza, mas não participa. Os oito nomes abaixo entram no sorteio.</p><div id="names" class="names"></div><button id="draw" class="wide">🎁 Realizar sorteio</button><div id="links" class="hidden"><h2 style="margin-top:24px">Links individuais</h2><p>Envie cada link somente à pessoa indicada. Não abra os links se quiser preservar a surpresa.</p><label for="base">Endereço público do site</label><input id="base" type="url" placeholder="https://usuario.github.io/amigo-secreto/"><p class="notice" id="baseWarning"></p><div id="rows"></div><p id="toast" role="status"></p><div class="actions"><button id="backup" class="secondary">Salvar backup</button><button id="reset" class="secondary">Novo sorteio</button></div><p class="notice">O sorteio fica salvo neste navegador. Um novo sorteio não invalida links antigos. Guarde o backup em local privado.</p></div><p class="notice">Para compartilhar à distância, publique este arquivo no GitHub Pages. Não é preciso cadastrar telefone nem instalar aplicativo.</p><label for="restore" class="notice">Restaurar sorteio de um backup</label><input id="restore" type="file" accept="application/json"></section><section id="guest" class="panel center hidden"><div id="gift" class="gift">🎁</div><h2 id="hello"></h2><p id="prompt">Seu amigo secreto está esperando por você. Abra o presente para descobrir!</p><button id="reveal" class="wide">Revelar meu amigo secreto</button><div id="answer" class="hidden"><p>Você vai presentear...</p><div id="who" class="result" aria-live="polite"></div><p>🤫 Guarde esse segredo com carinho!</p><button id="hide" class="secondary wide">Esconder resultado</button></div><p class="notice">Este link é pessoal. Não compartilhe com outras participantes.</p></section><section id="landing" class="panel center hidden"><div class="gift">🎄</div><h2>Bem-vindas!</h2><p>Para descobrir seu amigo secreto, abra o link individual enviado pelo organizador.</p><a class="btn secondary" href="#organizar">Área do organizador</a></section><section id="error" class="panel hidden"><h2>Link inválido</h2><p>Peça ao organizador que envie novamente seu link individual.</p></section><footer>Feito para celebrar a amizade • Natal 2026</footer></main><script>
-'use strict';const N=['SUSAMARA','SUSANA','AILA','DEANE','FRANCINEIDE','REGINA','JOSY','EUZILENE'];const $=id=>document.getElementById(id), KEY='amigo-secreto-2026-v2-oito';let data=null;const enc=b=>btoa(String.fromCharCode(...b)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');const dec=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));function rnd(n){let a=new Uint32Array(1),limit=2**32-(2**32%n);do{crypto.getRandomValues(a)}while(a[0]>=limit);return a[0]%n}function perm(){let a;do{a=N.map((_,i)=>i);for(let i=a.length-1;i>0;i--){let j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}}while(a.some((x,i)=>x===i));return a}async function make(i,j){let key=await crypto.subtle.generateKey({name:'AES-GCM',length:128},true,['encrypt']);let iv=crypto.getRandomValues(new Uint8Array(12));let raw=new Uint8Array(await crypto.subtle.exportKey('raw',key));let cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify([N[i],N[j],2]))));return enc(new Uint8Array([...raw,...iv,...cipher]))}async function read(t){let b=dec(t);let k=await crypto.subtle.importKey('raw',b.slice(0,16),'AES-GCM',false,['decrypt']);let p=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b.slice(16,28)},k,b.slice(28))));if(!Array.isArray(p)||p.length!==3||p[2]!==2||!N.includes(p[0])||!N.includes(p[1])||p[0]===p[1])throw Error();return p}function show(id){for(let x of ['admin','guest','landing','error'])$(x).classList.toggle('hidden',x!==id)}function store(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch{alert('Não foi possível salvar neste navegador. Baixe o backup.')}}function base(){try{let u=new URL($('base').value);if(u.protocol!=='https:'&&u.protocol!=='http:')return '';u.hash='';return u.href}catch{return ''}}function render(){if(!data)return;$('draw').classList.add('hidden');$('links').classList.remove('hidden');$('rows').replaceChildren();let b=base();$('baseWarning').textContent=b?'Confira se o endereço está publicado antes de enviar.':'Informe o endereço público HTTPS para habilitar o compartilhamento.';data.tokens.forEach((t,i)=>{let r=document.createElement('div');r.className='line';let s=document.createElement('strong');s.textContent=N[i];r.append(s);let c=document.createElement('button');c.textContent='Copiar link';c.disabled=!b;c.className='secondary';c.onclick=async()=>{try{await navigator.clipboard.writeText(b+'#r='+t);$('toast').textContent='Link de '+N[i]+' copiado.'}catch{window.prompt('Copie o link:',b+'#r='+t)}};r.append(c);if(b){let a=document.createElement('a');a.className='btn';a.textContent='WhatsApp';a.href='https://wa.me/?text='+encodeURIComponent('Olá, '+N[i]+'! 🎄 Seu link individual do Amigo Secreto 2026 está aqui. Abra e descubra quem você vai presentear. Valor mínimo do presente: R$ 50,00. Não compartilhe! 🎁\n'+b+'#r='+t);a.target='_blank';a.rel='noopener noreferrer';r.append(a)}$('rows').append(r)})}async function route(){let h=location.hash;if(h.startsWith('#r=')){try{let [n,a]=await read(h.slice(3));$('hello').textContent='Olá, '+n+'!';$('who').textContent=a;$('answer').classList.add('hidden');$('reveal').classList.remove('hidden');$('prompt').classList.remove('hidden');show('guest')}catch{show('error')}}else if(h==='#organizar'||location.protocol==='file:'){show('admin')}else show('landing')}$('names').innerHTML=N.map(n=>'<div class="name">✓ '+n+'</div>').join('');try{data=JSON.parse(localStorage.getItem(KEY))}catch{}$('base').value=data?.base||(/^https?:$/.test(location.protocol)?location.href.split('#')[0]:'');$('base').oninput=()=>{if(data){data.base=$('base').value;store();render()}};$('draw').onclick=async()=>{if(!crypto.subtle){alert('Abra o arquivo em um navegador moderno ou publique em HTTPS.');return}$('draw').disabled=true;try{let a=perm();data={version:2,tokens:await Promise.all(a.map((j,i)=>make(i,j))),base:$('base').value};store();render()}catch(e){alert('Não foi possível realizar o sorteio: '+e.message)}finally{$('draw').disabled=false}};$('backup').onclick=()=>{let u=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));let a=document.createElement('a');a.href=u;a.download='backup-amigo-secreto-2026-oito.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};$('reset').onclick=()=>{if(confirm('Criar outro sorteio? Os links deste sorteio continuarão funcionando e não devem ser usados.')){data=null;try{localStorage.removeItem(KEY)}catch{}$('links').classList.add('hidden');$('draw').classList.remove('hidden')}};$('restore').onchange=async e=>{try{let d=JSON.parse(await e.target.files[0].text());if(d.version!==2||!Array.isArray(d.tokens)||d.tokens.length!==N.length)throw Error();let p=await Promise.all(d.tokens.map(read));if(p.some((x,i)=>x[0]!==N[i])||new Set(p.map(x=>x[1])).size!==N.length)throw Error();data=d;$('base').value=d.base||$('base').value;store();render()}catch{alert('Backup inválido.')}e.target.value=''};$('reveal').onclick=()=>{$('reveal').classList.add('hidden');$('prompt').classList.add('hidden');$('answer').classList.remove('hidden');$('answer').classList.add('pop');$('gift').textContent='🎉'};$('hide').onclick=()=>{$('answer').classList.add('hidden');$('prompt').classList.remove('hidden');$('reveal').classList.remove('hidden');$('gift').textContent='🎁'};window.addEventListener('hashchange',route);if(data?.tokens?.length===N.length)render();route();</script></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amigo Secreto das Divas 2026</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(ellipse at top, #225b45, #09291f);
+    color: white;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}
+
+main {
+    max-width: 550px;
+    margin: auto;
+}
+
+header {
+    text-align: center;
+    padding: 20px 0;
+}
+
+h1 {
+    font-family: Georgia, serif;
+    color: #f5d89a;
+    font-size: 38px;
+    margin: 15px 0;
+}
+
+h2 {
+    color: #f5d89a;
+}
+
+.card {
+    background: #ffffff0d;
+    border: 1px solid #d8bd7650;
+    border-radius: 22px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 15px 40px #0003;
+}
+
+button, .btn {
+    display: inline-block;
+    border: none;
+    border-radius: 12px;
+    background: #e9c77c;
+    color: #123d30;
+    font-size: 15px;
+    font-weight: bold;
+    padding: 14px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+button:hover, .btn:hover {
+    filter: brightness(1.1);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.full {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.secondary {
+    background: #ffffff15;
+    color: white;
+    border: 1px solid #ffffff30;
+}
+
+.whatsapp {
+    background: #25D366;
+    color: #06291a;
+}
+
+.names {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.name {
+    background: #ffffff10;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 0;
+    border-bottom: 1px solid #ffffff20;
+}
+
+.line strong {
+    flex: 1;
+    min-width: 100px;
+}
+
+.line button, .line a {
+    font-size: 12px;
+    padding: 10px;
+}
+
+.gift {
+    font-size: 100px;
+    margin: 15px;
+    filter: drop-shadow(0 8px 10px #0005);
+}
+
+.center {
+    text-align: center;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.result {
+    font-size: 36px;
+    font-weight: bold;
+    color: #f5d89a;
+    margin: 20px 0;
+    overflow-wrap: anywhere;
+    animation: reveal 0.7s ease;
+}
+
+.rules {
+    background: #ffffff08;
+    border-radius: 12px;
+    padding: 15px;
+    line-height: 1.8;
+    font-size: 14px;
+}
+
+p {
+    line-height: 1.6;
+}
+
+small {
+    color: #d4e4d7;
+}
+
+footer {
+    text-align: center;
+    font-size: 12px;
+    color: #b8c9bb;
+    padding: 15px;
+}
+
+@keyframes reveal {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+</style>
+</head>
+
+<body>
+<main>
+
+<header>
+    <small>✦ NATAL 2026 ✦</small>
+    <h1>Amigo Secreto<br>das Divas</h1>
+    <p>Oito divas, uma surpresa especial!</p>
+    <strong style="color:#f5d89a">
+        🎁 Presente a partir de R$ 50,00
+    </strong>
+</header>
+
+<section id="inicio" class="card center hidden">
+    <div class="gift">🎄</div>
+    <h2>Bem-vindas, Divas!</h2>
+    <p>Abra seu link individual para descobrir sua amiga secreta.</p>
+    <a class="btn secondary" href="#organizar">
+        Área do organizador
+    </a>
+</section>
+
+<section id="admin" class="card hidden">
+    <h2>Área do organizador</h2>
+    <p>Organização: Welison</p>
+    <p>8 participantes confirmadas:</p>
+
+    <div id="nomes" class="names"></div>
+
+    <div class="rules" style="margin-top:20px">
+        🎁 Valor mínimo: R$ 50,00<br>
+        ✅ Ninguém tira o próprio nome.<br>
+        ✅ Nenhum nome será repetido.<br>
+        🤫 Mantenha o resultado em segredo.
+    </div>
+
+    <button id="sortear" class="full">
+        🎁 Realizar sorteio oficial
+    </button>
+
+    <div id="links" class="hidden">
+        <h2>Links individuais</h2>
+        <p>Envie cada link somente à participante indicada.</p>
+
+        <div id="lista"></div>
+
+        <p id="aviso"></p>
+
+        <button id="backup" class="full secondary">
+            💾 Salvar backup do sorteio
+        </button>
+
+        <p><small>Restaurar backup:</small></p>
+        <input type="file" id="restaurar" accept=".json">
+
+        <button id="reiniciar" class="full secondary">
+            Realizar novo sorteio
+        </button>
+
+        <p><small>
+            Não faça outro sorteio depois de enviar os links oficiais.
+        </small></p>
+    </div>
+</section>
+
+<section id="participante" class="card center hidden">
+
+    <div id="presente" class="gift">🎁</div>
+
+    <h2 id="saudacao"></h2>
+
+    <p id="mensagem">
+        Chegou a hora de descobrir sua amiga secreta!
+        Abra seu presente virtual.
+    </p>
+
+    <button id="revelar" class="full">
+        🎁 Revelar minha amiga secreta
+    </button>
+
+    <div id="resultado" class="hidden">
+        <p>Você vai presentear...</p>
+        <div id="sorteada" class="result"></div>
+        <p>🤫 Guarde esse segredo com carinho!</p>
+
+        <button id="esconder" class="full secondary">
+            Esconder resultado
+        </button>
+    </div>
+
+    <div class="rules" style="margin-top:25px">
+        <strong>Regras das Divas</strong><br>
+        🎁 Presente a partir de R$ 50,00.<br>
+        🤫 Não conte quem você tirou.<br>
+        🔒 Não compartilhe seu link.<br>
+        ❤️ Escolha o presente com carinho.
+    </div>
+
+</section>
+
+<section id="erro" class="card center hidden">
+    <h2>Link inválido</h2>
+    <p>Solicite o link atualizado ao organizador.</p>
+</section>
+
+<footer>
+    Amigo Secreto das Divas 2026<br>
+    Desenvolvido para celebrar a amizade.
+</footer>
+
+</main>
+
+<script>
+
+const nomes = [
+    "SUSAMARA",
+    "SUSANA",
+    "AILA",
+    "DEANE",
+    "FRANCINEIDE",
+    "REGINA",
+    "JOSY",
+    "EUZILENE"
+];
+
+const CHAVE = "amigo-secreto-divas-2026-v3";
+
+const $ = id => document.getElementById(id);
+
+let dados = null;
+
+function mostrar(id) {
+    ["inicio", "admin", "participante", "erro"].forEach(x => {
+        $(x).classList.toggle("hidden", x !== id);
+    });
+}
+
+function aleatorio(n) {
+    const a = new Uint32Array(1);
+    const limite = 2 ** 32 - (2 ** 32 % n);
+
+    do {
+        crypto.getRandomValues(a);
+    } while (a[0] >= limite);
+
+    return a[0] % n;
+}
+
+function realizarSorteio() {
+    let sorteadas;
+
+    do {
+        sorteadas = [...nomes];
+
+        for (let i = sorteadas.length - 1; i > 0; i--) {
+            const j = aleatorio(i + 1);
+
+            [sorteadas[i], sorteadas[j]] =
+            [sorteadas[j], sorteadas[i]];
+        }
+
+    } while (
+        sorteadas.some((nome, i) => nome === nomes[i])
+    );
+
+    return sorteadas;
+}
+
+function codificar(bytes) {
+    return btoa(String.fromCharCode(...bytes))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+}
+
+function decodificar(texto) {
+    return Uint8Array.from(
+        atob(
+            texto.replace(/-/g, "+")
+                .replace(/_/g, "/") +
+            "=".repeat((4 - texto.length % 4) % 4)
+        ),
+        c => c.charCodeAt(0)
+    );
+}
+
+async function criarToken(pessoa, sorteada) {
+
+    const key = await crypto.subtle.generateKey(
+        {name: "AES-GCM", length: 128},
+        true,
+        ["encrypt"]
+    );
+
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+
+    const raw = new Uint8Array(
+        await crypto.subtle.exportKey("raw", key)
+    );
+
+    const texto = new TextEncoder().encode(
+        JSON.stringify([pessoa, sorteada, 3])
+    );
+
+    const cipher = new Uint8Array(
+        await crypto.subtle.encrypt(
+            {name: "AES-GCM", iv},
+            key,
+            texto
+        )
+    );
+
+    return codificar(
+        new Uint8Array([...raw, ...iv, ...cipher])
+    );
+}
+
+async function lerToken(token) {
+
+    const bytes = decodificar(token);
+
+    const key = await crypto.subtle.importKey(
+        "raw",
+        bytes.slice(0, 16),
+        "AES-GCM",
+        false,
+        ["decrypt"]
+    );
+
+    const texto = await crypto.subtle.decrypt(
+        {
+            name: "AES-GCM",
+            iv: bytes.slice(16, 28)
+        },
+        key,
+        bytes.slice(28)
+    );
+
+    const p = JSON.parse(
+        new TextDecoder().decode(texto)
+    );
+
+    if (
+        !Array.isArray(p) ||
+        p.length !== 3 ||
+        p[2] !== 3 ||
+        !nomes.includes(p[0]) ||
+        !nomes.includes(p[1]) ||
+        p[0] === p[1]
+    ) {
+        throw new Error("Link inválido");
+    }
+
+    return p;
+}
+
+function salvar() {
+    try {
+        localStorage.setItem(
+            CHAVE,
+            JSON.stringify(dados)
+        );
+    } catch {
+        alert("Não foi possível salvar. Baixe o backup.");
+    }
+}
+
+function exibirLinks() {
+
+    $("sortear").classList.add("hidden");
+    $("links").classList.remove("hidden");
+    $("lista").replaceChildren();
+
+    const base = location.href.split("#")[0];
+
+    dados.tokens.forEach((token, i) => {
+
+        const link = base + "#r=" + token;
+
+        const mensagem =
+            "🎄🎁 AMIGO SECRETO DAS DIVAS 2026 🎁🎄\n\n" +
+            "Olá, " + nomes[i] + "!\n\n" +
+            "O sorteio oficial foi realizado!\n" +
+            "🎁 Valor mínimo do presente: R$ 50,00.\n" +
+            "🤫 Não conte quem você tirou.\n" +
+            "🔒 Não compartilhe seu link.\n\n" +
+            "Abra seu presente virtual:\n" +
+            link +
+            "\n\nOrganização: Welison";
+
+        const linha = document.createElement("div");
+        linha.className = "line";
+
+        const nome = document.createElement("strong");
+        nome.textContent = nomes[i];
+
+        const copiar = document.createElement("button");
+        copiar.textContent = "Copiar link";
+        copiar.className = "secondary";
+
+        copiar.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(link);
+                $("aviso").textContent =
+                    "Link de " + nomes[i] + " copiado!";
+            } catch {
+                prompt("Copie o link:", link);
+            }
+        };
+
+        const zap = document.createElement("a");
+        zap.className = "btn whatsapp";
+        zap.textContent = "WhatsApp";
+        zap.href =
+            "https://wa.me/?text=" +
+            encodeURIComponent(mensagem);
+
+        zap.target = "_blank";
+        zap.rel = "noopener noreferrer";
+
+        linha.append(nome, copiar, zap);
+        $("lista").append(linha);
+    });
+}
+
+$("sortear").onclick = async () => {
+
+    if (!confirm("Deseja realizar o sorteio oficial das 8 Divas?")) {
+        return;
+    }
+
+    $("sortear").disabled = true;
+
+    try {
+        const sorteadas = realizarSorteio();
+
+        dados = {
+            version: 3,
+            tokens: await Promise.all(
+                nomes.map((nome, i) =>
+                    criarToken(nome, sorteadas[i])
+                )
+            )
+        };
+
+        salvar();
+        exibirLinks();
+
+    } catch (erro) {
+        alert("Não foi possível realizar o sorteio.");
+    } finally {
+        $("sortear").disabled = false;
+    }
+};
+
+$("reiniciar").onclick = () => {
+
+    if (confirm(
+        "ATENÇÃO: os links anteriores continuarão abrindo. " +
+        "Descarte todos eles antes de enviar os novos. Continuar?"
+    )) {
+        localStorage.removeItem(CHAVE);
+        dados = null;
+        $("links").classList.add("hidden");
+        $("sortear").classList.remove("hidden");
+    }
+};
+
+$("backup").onclick = () => {
+
+    const arquivo = new Blob(
+        [JSON.stringify(dados)],
+        {type: "application/json"}
+    );
+
+    const url = URL.createObjectURL(arquivo);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = "backup-amigo-secreto-divas.json";
+    a.click();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+$("restaurar").onchange = async e => {
+
+    try {
+        const backup = JSON.parse(
+            await e.target.files[0].text()
+        );
+
+        if (
+            backup.version !== 3 ||
+            !Array.isArray(backup.tokens) ||
+            backup.tokens.length !== 8
+        ) {
+            throw new Error();
+        }
+
+        const pares = await Promise.all(
+            backup.tokens.map(lerToken)
+        );
+
+        if (
+            pares.some((p, i) => p[0] !== nomes[i]) ||
+            new Set(pares.map(p => p[1])).size !== 8
+        ) {
+            throw new Error();
+        }
+
+        dados = backup;
+        salvar();
+        exibirLinks();
+
+    } catch {
+        alert("Backup inválido.");
+    }
+
+    e.target.value = "";
+};
+
+$("revelar").onclick = () => {
+    $("revelar").classList.add("hidden");
+    $("mensagem").classList.add("hidden");
+    $("resultado").classList.remove("hidden");
+    $("presente").textContent = "🎉";
+};
+
+$("esconder").onclick = () => {
+    $("resultado").classList.add("hidden");
+    $("revelar").classList.remove("hidden");
+    $("mensagem").classList.remove("hidden");
+    $("presente").textContent = "🎁";
+};
+
+async function abrirPagina() {
+
+    const hash = location.hash;
+
+    if (hash.startsWith("#r=")) {
+
+        try {
+            const [pessoa, sorteada] =
+                await lerToken(hash.slice(3));
+
+            $("saudacao").textContent =
+                "Olá, " + pessoa + "!";
+
+            $("sorteada").textContent = sorteada;
+
+            $("resultado").classList.add("hidden");
+            $("revelar").classList.remove("hidden");
+            $("mensagem").classList.remove("hidden");
+            $("presente").textContent = "🎁";
+
+            mostrar("participante");
+
+        } catch {
+            mostrar("erro");
+        }
+
+    } else if (hash === "#organizar") {
+
+        mostrar("admin");
+
+    } else {
+        mostrar("inicio");
+    }
+}
+
+$("nomes").innerHTML = nomes.map(
+    nome => '<div class="name">✓ ' + nome + '</div>'
+).join("");
+
+try {
+    dados = JSON.parse(localStorage.getItem(CHAVE));
+} catch {
+    dados = null;
+}
+
+if (dados?.version === 3 && dados?.tokens?.length === 8) {
+    exibirLinks();
+}
+
+window.addEventListener("hashchange", abrirPagina);
+
+abrirPagina();
+
+</script>
+</body>
+</html>
